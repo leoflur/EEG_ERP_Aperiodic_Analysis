@@ -12,6 +12,7 @@ I'm tryinh to apply it to P3 and MMN ERPs.
 import mne
 import matplotlib.pyplot as plt
 import numpy as np 
+from scipy.fft import fft, fftfreq
 
 
 
@@ -33,7 +34,7 @@ mmn.set_montage(ten_twenty_montage)
 #filtering and scaling bc other formats will make the data look unreasonable
 p3.copy().filter(0.1, 100).plot(scalings=0.00008, clipping=None)
 mmn.copy().filter(0.1, 100).plot(scalings=0.00008, clipping=None)
-plt.show() 
+# plt.show() 
 
 event_p3, event_id_p3 = mne.events_from_annotations(p3)
 event_mmn, event_id_mmn = mne.events_from_annotations(mmn)
@@ -79,21 +80,25 @@ epochs = mne.Epochs(p3, events = event_p3_minus67, \
 epochs_pre_stimulus_window = epochs.copy().crop(tmin=-1, tmax=0)
 epochs_post_stimulus_window = epochs.copy().crop(tmin=0, tmax= 1)
 
-
-
-
 # computing ERP and Mean Pre and Post 
 mean_post_window =  epochs_pre_stimulus_window.average()
 mean_pre_window = epochs_post_stimulus_window.average()
 erp = epochs.average() # look at the averages for target, non target, and target - nontarget (and compare all 3 of them )
 
 
-#applying the fft using PSD
-# erp_spectrum = erp.compute_psd()
-# psds, freqs = erp_spectrum.get_data(return_freqs=True)
-# print(f"\nPSDs shape: {psds.shape}, freqs shape: {freqs.shape}")
-# erp_spectrum.plot(picks="data", exclude="bads", amplitude=False)
-# plt.show()
+
+
+#preparing for the fft
+sample_rate = epochs.info['sfreq']
+duration = len(epochs.times) / sample_rate
+N = sample_rate * duration
+post_data = epochs_post_stimulus_window.get_data()
+
+yf = fft(post_data)
+xf = fftfreq(N, 1 / sample_rate)
+
+plt.plot(xf, np.abs(yf))
+plt.show()
 
 #calculating post_minus ERP
 
