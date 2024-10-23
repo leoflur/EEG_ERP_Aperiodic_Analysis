@@ -14,9 +14,9 @@ import matplotlib.pyplot as plt
 import numpy as np 
 from scipy.fft import fft, fftfreq
 
-
-
-p3 = mne.io.read_raw_eeglab("p3_preprocessed.set", preload = True)
+# Read the file using MNE
+file_path = "C:/Users/leofl/OneDrive/Desktop/ERP Data/Project Cygnus/p3_preprocessed.set"
+p3 = mne.io.read_raw_eeglab(file_path, preload=True)
 
 ten_twenty_montage = mne.channels.make_standard_montage('standard_1020')
 p3.rename_channels({"FP1":'Fp1','FP2':'Fp2'})
@@ -25,13 +25,11 @@ p3.set_channel_types({'HEOG_left':'eog', 'HEOG_right':'eog', \
                        '(uncorr) VEOG' : 'eog'})
 p3.set_montage(ten_twenty_montage)
 
-
 #filtering and scaling bc other formats will make the data look unreasonable
 p3.copy().filter(0.1, 100).plot(scalings=0.00008, clipping=None)
 # plt.show() 
 
 event_p3, event_id_p3 = mne.events_from_annotations(p3)
-event_mmn, event_id_mmn = mne.events_from_annotations(mmn)
 
 #removing wrong or right markers in event p3 (in this case 6 or 7)
 event_p3_minus67 = [array for array in event_p3 if array[2] \
