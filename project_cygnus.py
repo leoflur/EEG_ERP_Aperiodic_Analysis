@@ -16,24 +16,18 @@ from scipy.fft import fft, fftfreq
 
 
 
-mmn = mne.io.read_raw_eeglab("C:\\Users\\leofl\\OneDrive\\Desktop\\ERP Data\\Cygnus\\data\\mmn_preprocessed.set", preload = True)
-p3 = mne.io.read_raw_eeglab("C:\\Users\\leofl\\OneDrive\\Desktop\\ERP Data\\Cygnus\\data\\p3_preprocessed.set", preload = True)
+p3 = mne.io.read_raw_eeglab("p3_preprocessed.set", preload = True)
 
 ten_twenty_montage = mne.channels.make_standard_montage('standard_1020')
 p3.rename_channels({"FP1":'Fp1','FP2':'Fp2'})
-mmn.rename_channels({"FP1":'Fp1','FP2':'Fp2'})
 p3.set_channel_types({'HEOG_left':'eog', 'HEOG_right':'eog', \
                        'VEOG_lower':'eog', '(uncorr) HEOG' : 'eog',\
                        '(uncorr) VEOG' : 'eog'})
-mmn.set_channel_types({'HEOG_left':'eog', 'HEOG_right':'eog', \
-                       'VEOG_lower':'eog', '(uncorr) HEOG' : 'eog',\
-                       '(uncorr) VEOG' : 'eog'})
 p3.set_montage(ten_twenty_montage)
-mmn.set_montage(ten_twenty_montage)
+
 
 #filtering and scaling bc other formats will make the data look unreasonable
 p3.copy().filter(0.1, 100).plot(scalings=0.00008, clipping=None)
-mmn.copy().filter(0.1, 100).plot(scalings=0.00008, clipping=None)
 # plt.show() 
 
 event_p3, event_id_p3 = mne.events_from_annotations(p3)
