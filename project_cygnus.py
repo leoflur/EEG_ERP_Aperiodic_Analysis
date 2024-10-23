@@ -26,7 +26,7 @@ p3.set_channel_types({'HEOG_left':'eog', 'HEOG_right':'eog', \
 p3.set_montage(ten_twenty_montage)
 
 #filtering and scaling bc other formats will make the data look unreasonable
-p3.copy().filter(0.1, 100).plot(scalings=0.00008, clipping=None)
+# p3.copy().filter(0.1, 100).plot(scalings=0.00008, clipping=None)
 # plt.show() 
 
 event_p3, event_id_p3 = mne.events_from_annotations(p3)
@@ -83,13 +83,14 @@ erp = epochs.average() # look at the averages for target, non target, and target
 #preparing for the fft
 sample_rate = epochs.info['sfreq']
 duration = len(epochs.times) / sample_rate
-N = sample_rate * duration
 post_data = epochs_post_stimulus_window.get_data()
+N = post_data.shape[2]
 
-yf = fft(post_data)
+yf = fft(post_data, axis = 2) # to is the time domain which we change to the freq 
+yf_avg =  np.mean(np.abs(yf), axis = (0,1)) # 0 represents time and 33 is channels
 xf = fftfreq(N, 1 / sample_rate)
 
-plt.plot(xf, np.abs(yf))
+plt.plot(xf, yf_avg)
 plt.show()
 
 #calculating post_minus ERP
