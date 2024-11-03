@@ -73,11 +73,9 @@ epochs_pre_stimulus_window = epochs.copy().crop(tmin=-1, tmax=0)
 epochs_post_stimulus_window = epochs.copy().crop(tmin=0, tmax= 1)
 
 # computing ERP and Mean Pre and Post 
-mean_post_window =  epochs_pre_stimulus_window.average()
-mean_pre_window = epochs_post_stimulus_window.average()
+# mean_post_window =  epochs_pre_stimulus_window.average()
+# mean_pre_window = epochs_post_stimulus_window.average()
 erp = epochs.average() # look at the averages for target, non target, and target - nontarget (and compare all 3 of them )
-
-
 
 
 #preparing for the fft
@@ -89,9 +87,34 @@ N = post_data.shape[2]
 yf = fft(post_data, axis = 2) # to is the time domain which we change to the freq 
 yf_avg =  np.mean(np.abs(yf), axis = (0,1)) # 0 represents time and 33 is channels
 xf = fftfreq(N, 1 / sample_rate)
+mask = xf[:N//2] <= 30 # we only want to plot frequencies up to 30 
 
-plt.plot(xf, yf_avg)
+plt.plot(xf[:N//2][mask], yf_avg[:N//2][mask]) # here we use indexing from numpy 
+plt.xlabel('Frequency (Hz)')
+plt.ylabel('Amplitude')
+plt.title('Average Amplitude Spectrum')
 plt.show()
+
+#Graphing the ERP
+sample_rate2 = erp.info['sfreq']
+duration2 = len(erp.times) / sample_rate2
+data2 = erp.data
+N2 = data2.shape[1]
+
+yf2 = fft(data2, axis=1)
+yf_avg2 = np.mean(np.abs(yf2), axis=0)
+xf2 = fftfreq(N2, 1 / sample_rate2)
+mask2 = xf2[:N2//2] <= 30
+
+plt.plot(xf2[:N2//2][mask2], yf_avg2[:N2//2][mask2]) 
+plt.xlabel('Frequency (Hz)')
+plt.ylabel('Amplitude')
+plt.title('Average Amplitude Spectrum ')
+plt.xlim(0, 30)
+plt.grid(True)
+plt.show()
+
+
 
 #calculating post_minus ERP
 
