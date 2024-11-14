@@ -63,7 +63,7 @@ new_event_id_p3_epoch = {
 
 epochs = mne.Epochs(p3, events = event_p3_minus67, \
                     event_id = new_event_id_p3_epoch,\
-                    tmin  = -1, tmax = 1\
+                    tmin  = -.6, tmax = .6\
                     ,baseline = None,
                     preload=True) 
 
@@ -76,6 +76,7 @@ epochs_post_stimulus_window = epochs.copy().crop(tmin=0, tmax= 1)
 # mean_post_window =  epochs_pre_stimulus_window.average()
 # mean_pre_window = epochs_post_stimulus_window.average()
 erp = epochs.average() # look at the averages for target, non target, and target - nontarget (and compare all 3 of them )
+# plot the epoch average and see if it looks funky 
 
 
 #preparing for the fft
@@ -116,6 +117,7 @@ plt.show()
 
 
 
-#calculating post_minus ERP
 
-    
+# need to move this stuff to a jupyter notebok
+# do are ERPs look right in the time domain 
+# do are ERPs look right in the frequency domain -- compare to graphs in ERP CORE 
