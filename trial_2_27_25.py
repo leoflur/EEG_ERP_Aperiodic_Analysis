@@ -151,6 +151,8 @@ def process_eeg_files(folder_path):
                                 ))
                             ))
                     
+                    
+                    
                     # 11. FOOOF Analysis
                     power_spec_windows = [
                         ("yf_avg_pre", yf_avg_pre),
