@@ -166,10 +166,9 @@ def process_eeg_files(folder_path):
                        
                     data_frame = pd.concat([data_frame, new_row], ignore_index=True)
 
-            # Save per-condition data
-            output_path = os.path.join(output_folder, f"{filename}_{condition}_power.npy")
-            np.save(output_path, condition_array)
-
+                # Save per-condition data
+                output_path = os.path.join(output_folder, f"{filename}_{condition}_power.npy")
+                np.save(output_path, condition_array)
     return data_frame
 
 if __name__ == '__main__':
