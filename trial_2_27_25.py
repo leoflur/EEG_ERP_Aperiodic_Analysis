@@ -119,25 +119,22 @@ def process_eeg_files(folder_path):
                     # 10. Post-minus-ERP Calculation
                     post_minus_erp = yf_avg_post - fft_erp
                     
-                    condition_array[ i_electrode, :] = np.vstack( # Vstack vertically stacks arrays
+                    condition_array[i_electrode, :] = np.vstack(( # Vstack vertically stacks arrays
                                      yf_avg_pre,
                                      yf_avg_post,
                                      post_minus_erp,
                                      fft_erp
-                                    )           
+                                    ))           
                     # 11. FOOOF Analysis
                     power_spec_windows = [
                         ("yf_avg_pre", yf_avg_pre),
                         ("yf_avg_post", yf_avg_post),
                         ("post_minus_erp", post_minus_erp)
                     ]
-                    new_row = pd.DataFrame({
-                            'Participant': [filename.split('.')[0]],
-                            'Electrode': [electrode],
-                            'Condition': [condition]
-                        })
+                    
 
                     for name, power_spec in power_spec_windows:
+                    
                         fg = FOOOF(
                             peak_width_limits=[2.5, 8],
                             max_n_peaks=1,
@@ -156,19 +153,23 @@ def process_eeg_files(folder_path):
                                 exp, offset, rsq = np.nan, np.nan, np.nan # If False return Nans
                         except:
                             exp, offset, rsq = np.nan, np.nan, np.nan
-
-                        new_row['Time Window'] = name
-                        new_row['Exp'] =  fg.get_params('aperiodic_params')[1]  # Index 1 corresponds to the exponent
-                        new_row['Offset'] =  fg.get_params('aperiodic_params')[0]  # Index 0 corresponds to the offset
-                        new_row['Rsq'] = fg.get_params('r_squared')
                         
-
+                        new_row = pd.DataFrame({
+                            'Participant': [filename.split('.')[0]],
+                            'Electrode': [electrode],
+                            'Condition': [condition],
+                            'Time Window' : [name],
+                            'Exponent' : [exp], 
+                            'Offset' :  [offset],
+                            'Rsq' : [rsq]
+                        })
+                       
                     data_frame = pd.concat([data_frame, new_row], ignore_index=True)
 
             # Save per-condition data
             output_path = os.path.join(output_folder, f"{filename}_{condition}_power.npy")
             np.save(output_path, condition_array)
-            
+
     return data_frame
 
 if __name__ == '__main__':
