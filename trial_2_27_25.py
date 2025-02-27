@@ -10,7 +10,6 @@ import pandas as pd
 
 def process_eeg_files(folder_path):
     data_frame = pd.DataFrame()
-    
     for filename in os.listdir(folder_path):
         if filename.endswith('.set'):
             file_path = os.path.join(folder_path, filename)
@@ -64,27 +63,11 @@ def process_eeg_files(folder_path):
             conditions = ['frequent_rare', 'rare_frequent', 'frequent_frequent']
             electrodes = epochs.ch_names
 
-            #adds an empty dictionary, keyed by the filename (e.g. {'p3_1': {}})
-            # y_frequencies_dict[filename.split('.')[0]] = {}
             
-            
-            for electrode in electrodes:  
-                condition_array = np.empty((0, 154))
-                output_folder = "Z:/LeoF/Cygnus/Files"
-                for condition in conditions:
-                    # # 5. Separate Epochs into Pre/Post (inlined from separate_epochs)
-                    # epochs_cond = epochs[condition].copy().pick_channels([electrode])
-                    # epochs_pre = epochs_cond.copy().crop(tmin=-0.6, tmax=0)
-                    # epochs_post = epochs_cond.copy().crop(tmin=0, tmax=0.6)
-                    
-                    # # Debug: Check epoch counts
-                    # print(f"Condition {condition}: {len(epochs_pre)} pre and {len(epochs_post)} post epochs")
-                    # assert len(epochs_pre) == len(epochs_post)
-                    
-                    # # 6. Perform FFT on Pre/Post (inlined from perform_fft_on_epochs)
-                    # pre_data = epochs_pre.get_data()[:, 0, :]  # Shape: (n_epochs, n_samples)
-                    # post_data = epochs_post.get_data()[:, 0, :]
-
+            output_folder = "Z:/LeoF/Cygnus/Files"
+            for condition in conditions:
+                condition_array = np.zeros((28,4,154)) # 3D array (28 electrodes × 4 metrics × 154 timepoints)
+                for i_electrode, electrode in enumerate(electrodes):  
                     # Below is a an improved approach where we use boolean masking instead of having to create multiple copeis all the time
                     # Get electrodes for the condition
                     epochs_data = epochs[condition].get_data() # Shape : ( 40_epocs, 28_channels, 309_times)
@@ -135,24 +118,13 @@ def process_eeg_files(folder_path):
                     
                     # 10. Post-minus-ERP Calculation
                     post_minus_erp = yf_avg_post - fft_erp
-
-                    #need to add in a np.save here for all the power spectral data 
-                    # compile them into 
-                    # should be 3 arrays per participant by condition 
-                    # p3_1_frequent_rare_power.npy
                     
-                    condition_array =  np.vstack((
-                        condition_array,
-                        np.vstack(( # Vstack vertically stacks arrays
-                                    yf_avg_pre,
-                                    yf_avg_post,
-                                    post_minus_erp,
-                                    fft_erp
-                                ))
-                            ))
-                    
-                    
-                    
+                    condition_array[ i_electrode, :] = np.vstack( # Vstack vertically stacks arrays
+                                     yf_avg_pre,
+                                     yf_avg_post,
+                                     post_minus_erp,
+                                     fft_erp
+                                    )           
                     # 11. FOOOF Analysis
                     power_spec_windows = [
                         ("yf_avg_pre", yf_avg_pre),
@@ -173,8 +145,6 @@ def process_eeg_files(folder_path):
                             peak_threshold=2.0,
                             aperiodic_mode='fixed'
                         )
-                        
-                        fg.fit(xf, power_spec, freq_range=(2, 25)) # Do i need this anymore
 
                         try:
                             fg.fit(xf, power_spec, freq_range=(2, 25))
@@ -192,24 +162,13 @@ def process_eeg_files(folder_path):
                         new_row['Offset'] =  fg.get_params('aperiodic_params')[0]  # Index 0 corresponds to the offset
                         new_row['Rsq'] = fg.get_params('r_squared')
                         
-                        # results[name] = {
-                        #     name: power_spec,
-                        #     'aps': fg.get_params('aperiodic_params'),
-                        #     'rsq': fg.get_params('r_squared'),
-                        # }
 
                     data_frame = pd.concat([data_frame, new_row], ignore_index=True)
-                    # results.update({
-                    #     'fft_erp': fft_erp,
-                    #     'xf': xf,
-                    #     'xf_erp': xf_erp
-                    # })
-                    
-                    # y_frequencies_dict[filename.split('.')[0]][condition] = results
-           
+
             # Save per-condition data
             output_path = os.path.join(output_folder, f"{filename}_{condition}_power.npy")
             np.save(output_path, condition_array)
+            
     return data_frame
 
 if __name__ == '__main__':
