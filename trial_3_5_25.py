@@ -213,7 +213,7 @@ def validate_npy_data(folder_path):
 def validate_df_shape(path):
     df = pd.read_csv(path)
     df_shape = df.shape
-    if df_shape != (5040, 8):
+    if df_shape != (5040, 8): # 20 × 3 × 3 × 28 = 5,040 rows
         print(f"❌ data_frame: Shape {df_shape} (Expected {df_shape})")
     else: 
         print(f"✅ data_frame: Valid shape")
