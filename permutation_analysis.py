@@ -73,4 +73,17 @@ for condition in ['frequent_rare', 'frequent_frequent', 'rare_frequent']:
 
     print(f"Condition {condition} done!")
 
-permuted_df.to_csv(os.getcwd()+'\\files\\permutation_shuffled.csv')
+permuted_df.to_csv("Z:\LeoF\Cygnus\DataFrame\permutation_shuffled.csv")
+
+
+# Compute grand mean average (seperately for offset and exponent)
+# Grand mean for the different pip types
+# Compare to the 2.5th percentile and 97.5th percentile and make sure that its outside that range
+# Recalculating the normal distribution for the post-minus-erp 
+    # Should be pretty easy to re-use previous code 
+# Any specific feedback I want to get? --> this is a progress report
+    # Presenting lay-friendly (how would I present in this way?)
+    # People engaged -- humor?
+# Minimize screenshots from your code -- just try to go through the specifics of the implementation
+
+

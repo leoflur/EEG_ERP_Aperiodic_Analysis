@@ -16,7 +16,7 @@ def process_eeg_files(folder_path):
             file_path = os.path.join(folder_path, filename)
             
             # 1. Load Raw EEG Data
-            raw_eeg = mne.io.read_raw_eeglab(file_path, preload=True)
+            raw_eeg = mne.io.read_raw_eeglab(file_path, preload= False)
             
             # 2. Preprocess Raw EEG (inlined from preprocess_raw_eeg)
             montage = mne.channels.make_standard_montage('standard_1020')
@@ -69,27 +69,39 @@ def process_eeg_files(folder_path):
             electrode_folder = "Z:/LeoF/Cygnus/Electrode"
             data_folder = "Z:/LeoF/Cygnus/DataFrame"
             for condition in conditions:
-                condition_array = np.zeros((28,4,154)) # 3D array (28 electrodes × 4 metrics × 154 timepoints)
+
+                # Extract data for condition
+                epochs_data = epochs[condition].get_data(copy = True)
+                
+                # --- Compute pre/post masks & freq axis once per conditon ---
+                
+                times = epochs.times
+                pre_mask = (times >= -0.6) & (times <= 0)
+                post_mask = (times >= 0) & (times <= 0.6)
+                
+                n_samples_pre = pre_mask.sum()  # e.g., 154
+                n_samples_post = post_mask.sum()
+                
+                sample_rate = epochs.info['sfreq']
+                xf_pre = np.fft.fftfreq(n_samples_pre, 1 / sample_rate)
+                xf_post = np.fft.fftfreq(n_samples_post, 1 / sample_rate)
+
+                condition_array = np.zeros((len(electrodes),4,n_samples_pre)) # 3D array (28 electrodes × 4 metrics × 154 timepoints)
+
                 for i_electrode, electrode in enumerate(electrodes):  
-                    # Get data for this condition and electrode
-                    epochs_data = epochs[condition].get_data(copy=True)  # Shape: (n_epochs, 28_channels, 309_times)
-                    times = epochs.times
-                    
+               
                     # Extract electrode data
                     electrode_data = epochs_data[:, i_electrode, :]  # Shape: (40, 309_times)
                     
                     # Split into pre/post stimulus
-                    pre_mask = (times >= -0.6) & (times <= 0)
-                    post_mask = (times >= 0) & (times <= 0.6)
                     pre_data = electrode_data[:, pre_mask]  # Shape: (n_epochs, 154_pre_samples)
                     post_data = electrode_data[:, post_mask]  # Shape: (n_epochs, 154_post_samples)
                     
-                
                     # Compute FFT in linear power
                     pre_spectra = np.abs(np.fft.fft(pre_data, axis=1)) ** 2  # Linear power
                     post_spectra = np.abs(np.fft.fft(post_data, axis=1)) ** 2
 
-                   
+                    # Average across epochs
                     yf_avg_pre = pre_spectra.mean(axis=0)
                     yf_avg_post = post_spectra.mean(axis=0)
 
@@ -97,17 +109,18 @@ def process_eeg_files(folder_path):
                     erp = post_data.mean(axis=0)
                     fft_erp = np.abs(np.fft.fft(erp)) ** 2
         
-                    # Post-minus-ERP (ensure matching lengths)
+                    # Post-minus-ERP 
                     post_minus_erp = yf_avg_post - fft_erp
 
                     n_samples_pre = pre_data.shape[1]
                     n_samples_post = post_data.shape[1]
                     
-                    # Get frequency axes
-                    sample_rate = epochs.info['sfreq']
-                    xf_pre = np.fft.fftfreq(n_samples_pre, 1 / sample_rate)
-                    xf_post = np.fft.fftfreq(n_samples_post, 1 / sample_rate)
-                    
+                    # --- Store in condition_array ---
+                    condition_array[i_electrode, 0, :] = yf_avg_pre    # Metric 0: Pre-event power
+                    condition_array[i_electrode, 1, :] = yf_avg_post   # Metric 1: Post-event power
+                    condition_array[i_electrode, 2, :] = post_minus_erp # Metric 2: Post - ERP
+                    condition_array[i_electrode, 3, :] = fft_erp # Metric 3: ERP
+        
                     # FOOOF analysis
                     power_spec_windows = [
                         ("yf_avg_pre", yf_avg_pre, xf_pre),
@@ -148,11 +161,20 @@ def process_eeg_files(folder_path):
                             'Rsq': [rsq]
                         })
                         data_frame = pd.concat([data_frame, new_row], ignore_index=True)
-                # Save per-condition data
+                
+                # Save condition power array
                 output_path = os.path.join(output_folder, f"{filename}_{condition}_power.npy")
                 np.save(output_path, condition_array)
 
-                # Saving out electrodes -- might need to do by participant if electrodes where removed
+                # Save frequency axes once per subject/condition
+                freq_data = {
+                    'xf_pre': xf_pre,
+                    'xf_post': xf_post
+                }
+                output_freq_path = os.path.join(output_folder, f"{filename}_{condition}_freq.npy")
+                np.save(output_freq_path, freq_data)  # Save as dictionary in .npy file
+
+                # Saving out electrodes 
                 output_path = os.path.join(electrode_folder, f"{filename}_{condition}_electrodes.npy")
                 np.save(output_path, electrodes)
 
@@ -177,24 +199,6 @@ def validate_npy_data(folder_path):
             else:
                 print(f"✅ {filename}: Valid shape")
             
-#             # 2. Check for duplicate values (using hashes)
-#             data_bytes = data.tobytes()  # Convert array to bytes
-#             data_hash = hashlib.sha256(data_bytes).hexdigest()  # Generate unique hash
-            
-#             if data_hash in hash_dict:
-#                 print(f"❌ DUPLICATE DATA: {filename} matches {hash_dict[data_hash]}")
-#             else:
-#                 hash_dict[data_hash] = filename
-#                 print(f"✅ {filename}: Not duplicate data")
-
-def validate_df_shape(path):
-    df = pd.read_csv(path)
-    df_shape = df.shape
-    if df_shape != (5040, 8): # 20 × 3 × 3 × 28 = 5,040 rows
-        print(f"❌ data_frame: Shape {df_shape} (Expected {df_shape})")
-    else: 
-        print(f"✅ data_frame: Valid shape")
-
 def violin_plots(path):
     """
     Function takes the dataframe a and slices it based on pip condition.
@@ -203,7 +207,9 @@ def violin_plots(path):
     through a for loop of the different sliced data frames.
     """
     a = pd.read_csv(path)
-    print("Exponent stats:\n", a['Exponent'].describe())  # Debug data
+
+    # Flip exponent signs *before* subsetting
+    a['exponent_negative'] = a['Exponent'] * -1
 
     # Filter by condition
     frequent_rare_df = a[a['Condition'] == 'frequent_rare'].groupby(by = ["Electrode", "Time Window"]).mean(numeric_only=True).reset_index()
@@ -212,35 +218,39 @@ def violin_plots(path):
 
     data = [frequent_rare_df, rare_frequent_df, frequent_frequent_df]
     titles = ["Frequent_Rare", "Rare_Frequent", "Frequent_Frequent"]
+    hue_order = ['yf_avg_pre', 'yf_avg_post', 'post_minus_erp']
+    
 
     for index, df in enumerate(data):
         plt.figure(figsize=(8, 5))
         # Fixed violinplot call
-        sns.violinplot(
+        ax = sns.violinplot(
             data=df,
             x='Time Window',
-            y='Exponent',
-            hue='Time Window',  
+            y='exponent_negative',
+            hue='Time Window',
+            order = hue_order,
+            hue_order = hue_order,  
             palette='pastel',
             inner='box',
             linewidth=1.1,
-            legend=False
+            cut = 0 
         )
         # Adjusted stripplot
         sns.stripplot(
             data=df,
             x='Time Window',
-            y='Exponent',
+             y='exponent_negative',
             color='grey',
             alpha=0.4,  # More transparent
             jitter=0.08
         )
+
+       
         plt.xlabel("Epoch Time Window")
         plt.ylabel("Exponent Value")
         plt.title(titles[index])
         plt.show()  # Remove ylim to auto-scale
-
-validate_npy_data("Z:/LeoF/Cygnus/Files")
-validate_df_shape("Z:/LeoF/Cygnus/DataFrame/data_frame.csv")
 violin_plots("Z:/LeoF/Cygnus/DataFrame/data_frame.csv")
+
 
