@@ -185,7 +185,7 @@ def process_eeg_files(folder_path):
     return data_frame
 
 if __name__ == '__main__':
-    folder_path = "C:/Users/leofl/OneDrive/Pictures/Documents/GitHub/Project-Cygnus/files"
+    folder_path = "C:/Users/leofl/OneDrive/Pictures/Documents/GitHub/EEG_ERP_Aperiodic_Analysis/files"
     y_frequencies_df = process_eeg_files(folder_path)
 
 def validate_npy_data(folder_path):
