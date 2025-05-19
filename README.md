@@ -23,7 +23,8 @@
 + ****Skills Demonstrated****: Signal processing, hypothesis testing, EEG power spectral analysis, data visualization
 
 **Visuals**
-  + Replication of Graph A
+
+![Model Residuals](Assets/residuals_plot.png)
  
 **How to run**
 + Clone repo
@@ -32,4 +33,4 @@
 + run post_minus_erp_permutation
 + run permutation_analysis
 + run model_creation_full_script
-+ 
+  
