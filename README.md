@@ -22,5 +22,14 @@
 + ****Techniques****: Fast Fourier Transform (FFT), permutation testing, generating power spectra
 + ****Skills Demonstrated****: Signal processing, hypothesis testing, EEG power spectral analysis, data visualization
 
-+ **Visuals**
-  + Replication of Graph A 
+**Visuals**
+  + Replication of Graph A
+ 
+**How to run**
++ Clone repo
++ install nescessary libraries
++ run df creation
++ run post_minus_erp_permutation
++ run permutation_analysis
++ run model_creation_full_script
++ 
